@@ -1389,7 +1389,7 @@ angular.module('schemaForm').provider('schemaForm',
         if (obj.type === 'checkbox' && angular.isUndefined(obj.schema['default'])) {
           obj.schema['default'] = false;
         }
-        
+
         // Special case: template type with tempplateUrl that's needs to be loaded before rendering
         // TODO: this is not a clean solution. Maybe something cleaner can be made when $ref support
         // is introduced since we need to go async then anyway
@@ -2683,7 +2683,22 @@ angular.module('schemaForm')
         // part of the form or schema is chnaged without it being a new instance.
         scope.$on('schemaFormRedraw', function() {
           var schema = scope.schema;
+          var savedScopes = {};
+          if (scope.initialForm) {
+              for (var prop in scope.initialForm) {
+                  if (scope.initialForm[prop].options && scope.initialForm[prop].options.scope) {
+                      savedScopes[prop] = scope.initialForm[prop].options.scope;
+                      scope.initialForm[prop].options.scope = null;
+                  }
+              }
+          }
+
           var form   = scope.initialForm ? angular.copy(scope.initialForm) : ['*'];
+
+          for (var prop in savedScopes) {
+              form[prop].options.scope = savedScopes[prop];
+          }
+
           if (schema) {
             render(schema, form);
           }
@@ -2824,8 +2839,8 @@ angular.module('schemaForm').directive('schemaValidate', ['sfValidator', '$parse
 
         // A bit ugly but useful.
         scope.validateField =  function(formName) {
-          
-          // If we have specified a form name, and this model is not within 
+
+          // If we have specified a form name, and this model is not within
           // that form, then leave things be.
           if(formName != undefined && ngModel.$$parentForm.$name !== formName) {
             return;
